@@ -378,3 +378,18 @@ def test_agentbioacoustic_pull_payment_claim(client):
 
     bal_after = contract.get_claimable_balance(args=[str(rangers)]).call()
     assert bal_after == "0"
+
+
+def test_agentbioacoustic_deploy_with_int_or_empty_address(client):
+    """Proves that deploying with an integer address (from StudioNet calldata) or default owner succeeds seamlessly."""
+    # Deploy with int address as passed by StudioNet: 472550793975058273004828829232443518568531124728
+    int_addr = 472550793975058273004828829232443518568531124728
+    contract_int = client.deploy("contracts/contract.py", args=[int_addr])
+    stats_int = json.loads(contract_int.get_stats().call())
+    assert stats_int["owner"] == "0x52c5e913fc54d00cba5df3312268bf66035661f8"
+
+    # Deploy with no args
+    contract_default = client.deploy("contracts/contract.py")
+    stats_def = json.loads(contract_default.get_stats().call())
+    assert stats_def["owner"] != ""
+

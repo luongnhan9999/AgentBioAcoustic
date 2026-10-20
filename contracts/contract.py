@@ -148,13 +148,17 @@ class Contract(gl.Contract):
     def __init__(self, initial_owner: Address = Address(ZERO_ADDRESS)):
         deployer = Address(ZERO_ADDRESS)
         try:
-            deployer = _get_sender()
+            deployer = _to_address(_get_sender())
         except Exception:
             pass
 
-        target_owner = initial_owner if _addr_str(initial_owner) != ZERO_ADDRESS else deployer
+        parsed_owner = _to_address(initial_owner)
+        if _addr_str(parsed_owner) != ZERO_ADDRESS:
+            target_owner = parsed_owner
+        else:
+            target_owner = deployer
 
-        self.owner = target_owner
+        self.owner = _to_address(target_owner)
         self.total_conservation_locked = bigint(0)
         self.total_policies_settled = u32(0)
         self.policy_counter = u64(0)
@@ -164,7 +168,7 @@ class Contract(gl.Contract):
 
     def _ensure_owner(self) -> None:
         if _addr_str(self.owner) == ZERO_ADDRESS:
-            self.owner = _get_sender()
+            self.owner = _to_address(_get_sender())
 
     def _safe_transfer(self, recipient: Address, amount: bigint) -> None:
         """Transfers native GEN tokens with Pull-Payment fallback to eliminate lost funds."""
@@ -843,7 +847,7 @@ Respond ONLY with valid JSON:
 
     @gl.public.view
     def get_claimable_balance(self, account: Address) -> str:
-        return str(self.claimable_balances.get(_addr_str(account), bigint(0)))
+        return str(self.claimable_balances.get(_addr_str(_to_address(account)), bigint(0)))
 
     @gl.public.view
     def get_stats(self) -> str:

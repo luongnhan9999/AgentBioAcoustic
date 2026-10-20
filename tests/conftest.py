@@ -126,6 +126,12 @@ class _MockContractInstance:
         self.contract_path = contract_path
         self.caller = client.accounts[0]
         self.owner = client.accounts[0]
+        if "args" in deploy_kwargs and deploy_kwargs["args"]:
+            arg0 = deploy_kwargs["args"][0]
+            if isinstance(arg0, int):
+                self.owner = f"0x{arg0:040x}".lower()
+            elif arg0 and str(arg0).lower() != ZERO_ADDRESS:
+                self.owner = str(arg0).lower()
         self.policies = {}
         self.policy_ids = []
         self.policy_counter = 0
