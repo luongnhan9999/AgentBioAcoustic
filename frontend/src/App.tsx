@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Navbar,
 } from './components/Navbar';
@@ -8,6 +8,15 @@ import {
 import {
   PolicyCard,
 } from './components/PolicyCard';
+import {
+  SoundscapeNavigator,
+} from './components/SoundscapeNavigator';
+import {
+  BioacousticCommandStage,
+} from './components/BioacousticCommandStage';
+import {
+  PoliciesTable,
+} from './components/PoliciesTable';
 import {
   CreatePolicyModal,
 } from './components/CreatePolicyModal';
@@ -42,16 +51,21 @@ import {
   STATUS_DISPUTED,
 } from './config/genlayer';
 import {
+  Radio,
+  Trees,
+  LayoutDashboard,
+  Table as TableIcon,
+  Grid,
+  RefreshCw,
   Search,
   Filter,
-  RefreshCw,
-  Trees,
-  Radio,
+  Sparkles,
   ShieldCheck,
   AlertTriangle,
-  Info,
 } from 'lucide-react';
 import { parseGenToWei } from './utils/formatters';
+
+type ViewMode = 'observatory' | 'grid' | 'table';
 
 export function App() {
   const [contractAddress, setContractAddress] = useState<string>(getSavedContractAddress());
@@ -65,12 +79,18 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
+  // Selected policy for Observatory War Room
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+
+  // View mode switcher: 'observatory' (default high-tech command center), 'grid', 'table'
+  const [viewMode, setViewMode] = useState<ViewMode>('observatory');
+
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState<boolean>(false);
   const [isInspectOpen, setIsInspectOpen] = useState<boolean>(false);
   const [isAppealOpen, setIsAppealOpen] = useState<boolean>(false);
-  const [selectedPolicy, setSelectedPolicy] = useState<ConservationPolicyData | null>(null);
+  const [modalPolicy, setModalPolicy] = useState<ConservationPolicyData | null>(null);
 
   // Filter & Search
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -182,6 +202,11 @@ export function App() {
           ? JSON.parse(policiesRes)
           : [];
         setPolicies(parsedPolicies);
+
+        // Auto select first policy if none selected
+        if (parsedPolicies.length > 0 && !selectedPolicyId) {
+          setSelectedPolicyId(parsedPolicies[0].policy_id);
+        }
       }
 
       if (statsRes) {
@@ -199,13 +224,21 @@ export function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [contractAddress, userAddress]);
+  }, [contractAddress, userAddress, selectedPolicyId]);
 
   useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 8000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // Find active selected policy
+  const activeSelectedPolicy = useMemo(() => {
+    if (!selectedPolicyId && policies.length > 0) {
+      return policies[0];
+    }
+    return policies.find((p) => p.policy_id === selectedPolicyId) || policies[0] || null;
+  }, [policies, selectedPolicyId]);
 
   /* -------------------------------------------------------------------------- */
   /*                            Contract Write Actions                          */
@@ -433,7 +466,7 @@ export function App() {
       />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
         {/* Pull Payment Claim Widget */}
         <PullPayoutButton
           contractAddress={contractAddress}
@@ -449,91 +482,101 @@ export function App() {
           onOpenCreatePolicy={() => setIsCreateOpen(true)}
         />
 
-        {/* Policies Section Header & Filter Controls */}
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        {/* Layout Mode Navigation & Refresh Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-canopy-850 border border-canopy-700/80 shadow-lg">
+          <div className="flex items-center gap-2">
+            <Radio className="w-5 h-5 text-bio-cyan animate-pulse" />
             <div>
-              <h2 className="font-heading font-extrabold text-2xl text-white flex items-center gap-2">
-                <Radio className="w-5 h-5 text-bio-cyan animate-pulse" />
-                <span>Monitored Rainforest Soundscapes</span>
+              <h2 className="font-heading font-extrabold text-lg text-white">
+                Bioacoustic Surveillance Observatory & Forensic War Room
               </h2>
-              <p className="text-xs font-mono text-bio-muted mt-0.5">
-                Real-time acoustic telemetry mesh verified by on-chain AI Tribunal
+              <p className="text-[11px] font-mono text-bio-muted">
+                Non-deterministic acoustic telemetry oracle for autonomous rainforest conservation grants
               </p>
-            </div>
-
-            {/* Refresh and Counts */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={fetchData}
-                disabled={isLoading}
-                className="p-2 rounded-xl bg-canopy-850 hover:bg-canopy-800 border border-canopy-700 text-slate-300 hover:text-white transition-colors"
-                title="Refresh State"
-              >
-                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-bio-thriving' : ''}`} />
-              </button>
             </div>
           </div>
 
-          {/* Search & Filter bar */}
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            {/* Search Input */}
-            <div className="relative flex-1 w-full">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-bio-muted" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by Reserve name, Policy ID, Sponsor, or Rangers..."
-                className="w-full pl-9 pr-4 py-2 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-bio-thriving"
-              />
+          {/* View Mode Switcher Pills */}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-canopy-950 border border-canopy-700 text-xs font-mono">
+              <button
+                onClick={() => setViewMode('observatory')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  viewMode === 'observatory'
+                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
+                    : 'text-bio-muted hover:text-white'
+                }`}
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>Observatory</span>
+              </button>
+              <button
+                onClick={() => setViewMode('table')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  viewMode === 'table'
+                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
+                    : 'text-bio-muted hover:text-white'
+                }`}
+              >
+                <TableIcon className="w-3.5 h-3.5" />
+                <span>Ledger</span>
+              </button>
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
+                  viewMode === 'grid'
+                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
+                    : 'text-bio-muted hover:text-white'
+                }`}
+              >
+                <Grid className="w-3.5 h-3.5" />
+                <span>Card Grid</span>
+              </button>
             </div>
 
-            {/* Status Filter Buttons */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono overflow-x-auto w-full sm:w-auto">
-              {[
-                { id: 'all', label: 'All' },
-                { id: 'active', label: 'Listening' },
-                { id: 'awaiting', label: 'Cooling-Off' },
-                { id: 'disputed', label: 'Appeals' },
-                { id: 'settled', label: 'Settled' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setStatusFilter(tab.id)}
-                  className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                    statusFilter === tab.id
-                      ? 'bg-bio-thriving text-canopy-950 font-bold'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={fetchData}
+              disabled={isLoading}
+              className="p-2 rounded-xl bg-canopy-800 hover:bg-canopy-750 border border-canopy-700 text-slate-300 hover:text-white transition-colors"
+              title="Refresh State"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-bio-thriving' : ''}`} />
+            </button>
           </div>
         </div>
 
-        {/* Policies Grid */}
-        {filteredPolicies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPolicies.map((policy) => (
-              <PolicyCard
-                key={policy.policy_id}
-                policy={policy}
+        {/* VIEW 1: OBSERVATORY MASTER-DETAIL (COMMAND STAGE + SOUNDSCAPE NAVIGATOR) */}
+        {viewMode === 'observatory' && (
+          <div className="flex flex-col lg:flex-row gap-6 items-start">
+            {/* Left Column: Soundscape Station Navigator */}
+            <SoundscapeNavigator
+              policies={policies}
+              selectedPolicyId={activeSelectedPolicy?.policy_id || null}
+              onSelectPolicy={(p) => setSelectedPolicyId(p.policy_id)}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              onOpenCreatePolicy={() => setIsCreateOpen(true)}
+            />
+
+            {/* Right/Center Column: Bioacoustic Command Stage */}
+            {activeSelectedPolicy ? (
+              <BioacousticCommandStage
+                policy={activeSelectedPolicy}
                 userAddress={userAddress}
                 isConnected={isConnected}
                 onSubmitTelemetry={(p) => {
-                  setSelectedPolicy(p);
+                  setModalPolicy(p);
                   setIsTelemetryOpen(true);
                 }}
                 onAdjudicate={handleAdjudicate}
                 onInspect={(p) => {
-                  setSelectedPolicy(p);
+                  setModalPolicy(p);
                   setIsInspectOpen(true);
                 }}
                 onOpenAppeal={(p) => {
-                  setSelectedPolicy(p);
+                  setModalPolicy(p);
                   setIsAppealOpen(true);
                 }}
                 onAdjudicateAppeal={handleAdjudicateAppeal}
@@ -541,28 +584,116 @@ export function App() {
                 onReclaim={handleReclaim}
                 actionLoadingId={actionLoadingId}
               />
-            ))}
+            ) : (
+              <div className="flex-1 p-12 text-center rounded-2xl bg-canopy-850 border border-canopy-700 space-y-4">
+                <Trees className="w-12 h-12 mx-auto text-bio-muted" />
+                <h3 className="font-heading font-bold text-lg text-white">No Reserve Selected</h3>
+                <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
+                  Deploy your first habitat escrow to initiate continuous acoustic canopy monitoring.
+                </p>
+                <button
+                  onClick={() => setIsCreateOpen(true)}
+                  className="px-5 py-2.5 rounded-xl bg-bio-thriving text-canopy-950 font-heading font-bold text-xs uppercase"
+                >
+                  Deploy First Escrow
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="p-12 text-center rounded-2xl bg-canopy-850 border border-canopy-700 space-y-4">
-            <div className="w-12 h-12 mx-auto rounded-full bg-canopy-800 flex items-center justify-center text-bio-muted">
-              <Trees className="w-6 h-6" />
+        )}
+
+        {/* VIEW 2: HIGH-DENSITY AUDIT TABLE */}
+        {viewMode === 'table' && (
+          <PoliciesTable
+            policies={filteredPolicies}
+            onSelectPolicy={(p) => {
+              setSelectedPolicyId(p.policy_id);
+              setViewMode('observatory');
+            }}
+            onInspect={(p) => {
+              setModalPolicy(p);
+              setIsInspectOpen(true);
+            }}
+            selectedPolicyId={activeSelectedPolicy?.policy_id || null}
+          />
+        )}
+
+        {/* VIEW 3: CLASSIC CARD GRID */}
+        {viewMode === 'grid' && (
+          <div className="space-y-4">
+            {/* Search and Filters */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="relative flex-1 w-full">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-bio-muted" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by Reserve name, Policy ID, Sponsor, or Rangers..."
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-bio-thriving"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono overflow-x-auto w-full sm:w-auto">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'active', label: 'Listening' },
+                  { id: 'awaiting', label: 'Cooling' },
+                  { id: 'disputed', label: 'Appeals' },
+                  { id: 'settled', label: 'Settled' },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setStatusFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
+                      statusFilter === tab.id
+                        ? 'bg-bio-thriving text-canopy-950 font-bold'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div>
-              <h3 className="font-heading font-bold text-lg text-white">No Conservation Policies Found</h3>
-              <p className="text-xs font-mono text-slate-400 mt-1 max-w-md mx-auto">
-                {searchQuery || statusFilter !== 'all'
-                  ? 'No policies match the active filter criteria. Try clearing search filters.'
-                  : 'Be the first BioDAO or Donor to lock conservation subsidy and protect an endangered rainforest canopy!'}
-              </p>
-            </div>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-bio-thriving text-canopy-950 font-heading font-bold text-xs tracking-wider uppercase hover:bg-bio-lime shadow-bio-glow transition-all"
-            >
-              <Trees className="w-4 h-4" />
-              <span>Deploy First Escrow</span>
-            </button>
+
+            {filteredPolicies.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPolicies.map((policy) => (
+                  <PolicyCard
+                    key={policy.policy_id}
+                    policy={policy}
+                    userAddress={userAddress}
+                    isConnected={isConnected}
+                    onSubmitTelemetry={(p) => {
+                      setModalPolicy(p);
+                      setIsTelemetryOpen(true);
+                    }}
+                    onAdjudicate={handleAdjudicate}
+                    onInspect={(p) => {
+                      setModalPolicy(p);
+                      setIsInspectOpen(true);
+                    }}
+                    onOpenAppeal={(p) => {
+                      setModalPolicy(p);
+                      setIsAppealOpen(true);
+                    }}
+                    onAdjudicateAppeal={handleAdjudicateAppeal}
+                    onFinalize={handleFinalize}
+                    onReclaim={handleReclaim}
+                    actionLoadingId={actionLoadingId}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="p-12 text-center rounded-2xl bg-canopy-850 border border-canopy-700 space-y-4">
+                <Trees className="w-12 h-12 mx-auto text-bio-muted" />
+                <h3 className="font-heading font-bold text-lg text-white">No Policies Found</h3>
+                <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
+                  No policies match active filters.
+                </p>
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -614,31 +745,31 @@ export function App() {
       />
 
       <SubmitTelemetryModal
-        policy={selectedPolicy}
+        policy={modalPolicy}
         isOpen={isTelemetryOpen}
         onClose={() => {
           setIsTelemetryOpen(false);
-          setSelectedPolicy(null);
+          setModalPolicy(null);
         }}
         onSubmit={handleSubmitTelemetry}
         isSubmitting={isLoading}
       />
 
       <AcousticInspectorModal
-        policy={selectedPolicy}
+        policy={modalPolicy}
         isOpen={isInspectOpen}
         onClose={() => {
           setIsInspectOpen(false);
-          setSelectedPolicy(null);
+          setModalPolicy(null);
         }}
       />
 
       <AppealModal
-        policy={selectedPolicy}
+        policy={modalPolicy}
         isOpen={isAppealOpen}
         onClose={() => {
           setIsAppealOpen(false);
-          setSelectedPolicy(null);
+          setModalPolicy(null);
         }}
         onSubmit={handleAppeal}
         isSubmitting={isLoading}

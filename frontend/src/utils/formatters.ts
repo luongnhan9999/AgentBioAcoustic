@@ -65,6 +65,9 @@ export interface StatusMeta {
   borderClass: string;
   accentClass: string;
   description: string;
+  bgColor: string;
+  color: string;
+  borderColor: string;
 }
 
 export function getStatusMeta(status: number): StatusMeta {
@@ -76,6 +79,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-cyan/15 text-bio-cyan border-bio-cyan/30',
         borderClass: 'border-bio-cyan/30',
         accentClass: 'text-bio-cyan',
+        bgColor: 'bg-bio-cyan/15',
+        color: 'text-bio-cyan',
+        borderColor: 'border-bio-cyan/30',
         description: 'Sponsor locked conservation escrow. Acoustic microphone array listening.',
       };
     case 1:
@@ -85,6 +91,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-lime/20 text-bio-lime border-bio-lime/40 animate-pulse',
         borderClass: 'border-bio-lime/40',
         accentClass: 'text-bio-lime',
+        bgColor: 'bg-bio-lime/20',
+        color: 'text-bio-lime',
+        borderColor: 'border-bio-lime/40',
         description: 'Ranger submitted audio spectrogram. Queued for GenLayer AI jury audit.',
       };
     case 2:
@@ -94,6 +103,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-amber/20 text-bio-amber border-bio-amber/40',
         borderClass: 'border-bio-amber/40',
         accentClass: 'text-bio-amber',
+        bgColor: 'bg-bio-amber/20',
+        color: 'text-bio-amber',
+        borderColor: 'border-bio-amber/40',
         description: 'AI bioacoustic verdict rendered. 24-block (~72s) challenge window active.',
       };
     case 3:
@@ -103,6 +115,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-thriving/20 text-bio-thriving border-bio-thriving/50',
         borderClass: 'border-bio-thriving/50',
         accentClass: 'text-bio-thriving',
+        bgColor: 'bg-bio-thriving/20',
+        color: 'text-bio-thriving',
+        borderColor: 'border-bio-thriving/50',
         description: 'Vibrant soundscape verified. 100% conservation grant disbursed to rangers.',
       };
     case 4:
@@ -112,6 +127,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-amber/20 text-bio-amber border-bio-amber/50',
         borderClass: 'border-bio-amber/50',
         accentClass: 'text-bio-amber',
+        bgColor: 'bg-bio-amber/20',
+        color: 'text-bio-amber',
+        borderColor: 'border-bio-amber/50',
         description: 'Chainsaw drone or degraded NDSI detected. 50% penalty applied.',
       };
     case 5:
@@ -121,6 +139,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-bio-crisis/20 text-bio-crisis border-bio-crisis/50',
         borderClass: 'border-bio-crisis/50',
         accentClass: 'text-bio-crisis',
+        bgColor: 'bg-bio-crisis/20',
+        color: 'text-bio-crisis',
+        borderColor: 'border-bio-crisis/50',
         description: 'Gunshots or acoustic collapse detected. 100% escrow refunded to sponsor.',
       };
     case 6:
@@ -130,6 +151,9 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-purple-500/20 text-purple-300 border-purple-500/40 animate-pulse',
         borderClass: 'border-purple-500/40',
         accentClass: 'text-purple-400',
+        bgColor: 'bg-purple-500/20',
+        color: 'text-purple-300',
+        borderColor: 'border-purple-500/40',
         description: 'Under Supreme Bioacoustic Tribunal review with 10% staked dispute bond.',
       };
     case 7:
@@ -139,25 +163,23 @@ export function getStatusMeta(status: number): StatusMeta {
         badgeClass: 'bg-slate-700/30 text-slate-400 border-slate-600/40',
         borderClass: 'border-slate-700/40',
         accentClass: 'text-slate-400',
+        bgColor: 'bg-slate-700/30',
+        color: 'text-slate-400',
+        borderColor: 'border-slate-600/40',
         description: 'Policy coverage expired with zero telemetry. Escrow reclaimed by sponsor.',
       };
     case 8:
+    default:
       return {
         code: 8,
         label: 'UNRESOLVED / PROTECTED',
         badgeClass: 'bg-rose-900/30 text-rose-300 border-rose-500/40',
         borderClass: 'border-rose-500/40',
         accentClass: 'text-rose-400',
+        bgColor: 'bg-rose-900/30',
+        color: 'text-rose-300',
+        borderColor: 'border-rose-500/40',
         description: 'Feed unreachable or canary parse failure. Non-settling safety halt.',
-      };
-    default:
-      return {
-        code: status,
-        label: `STATUS ${status}`,
-        badgeClass: 'bg-slate-700/30 text-slate-400 border-slate-600/40',
-        borderClass: 'border-slate-700/40',
-        accentClass: 'text-slate-400',
-        description: 'Status code pending recognition.',
       };
   }
 }
