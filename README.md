@@ -59,12 +59,12 @@ Rainforests across Southeast Asia, the Congo Basin, and the Amazon hold over 80%
 | **Network** | GenLayer Studionet |
 | **Chain ID** | `61999` (Hex: `0xF22F`) |
 | **RPC Endpoint** | `https://studio.genlayer.com/api` |
-| **Contract Address** | `0x26214bB35532a4AC9F3d6c3ca2Af442eC264027F` |
-| **Transaction Hash** | `0xf80bfd330ba0521559876c7406dc36ab94fdeb8e8c86595ca9e894ab4d692414` |
+| **Contract Address** | `0x79faFaDc3543ef8728c6937AC65CFC47059fE64d` |
+| **Transaction Hash** | `0x2bb42a483e4a0e99ba1845673bf89057c664412d73684002bbb04209e051b1ca` |
 | **Receipt Status** | `5` (ACCEPTED / FINALIZED) |
 | **Live Web3 dApp** | [https://agentbioacoustic.vercel.app](https://agentbioacoustic.vercel.app) |
 | **GitHub Repository** | [https://github.com/luongnhan9999/AgentBioAcoustic](https://github.com/luongnhan9999/AgentBioAcoustic) |
-| **GenLayer Studio View** | [View Contract on GenLayer Studio](https://studio.genlayer.com/contracts/0x26214bB35532a4AC9F3d6c3ca2Af442eC264027F) |
+| **GenLayer Studio View** | [View Contract on GenLayer Studio](https://studio.genlayer.com/contracts/0x79faFaDc3543ef8728c6937AC65CFC47059fE64d) |
 
 ---
 
