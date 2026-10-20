@@ -3,20 +3,20 @@ import {
   Navbar,
 } from './components/Navbar';
 import {
-  StatsOverview,
-} from './components/StatsOverview';
+  CanopyRadarMatrix,
+} from './components/CanopyRadarMatrix';
 import {
-  PolicyCard,
-} from './components/PolicyCard';
+  SpectralWorkstation,
+} from './components/SpectralWorkstation';
 import {
-  SoundscapeNavigator,
-} from './components/SoundscapeNavigator';
-import {
-  BioacousticCommandStage,
-} from './components/BioacousticCommandStage';
+  EscrowTribunalTerminal,
+} from './components/EscrowTribunalTerminal';
 import {
   PoliciesTable,
 } from './components/PoliciesTable';
+import {
+  FloatingControlDock,
+} from './components/FloatingControlDock';
 import {
   CreatePolicyModal,
 } from './components/CreatePolicyModal';
@@ -53,19 +53,19 @@ import {
 import {
   Radio,
   Trees,
-  LayoutDashboard,
+  Compass,
+  Sliders,
   Table as TableIcon,
-  Grid,
   RefreshCw,
   Search,
-  Filter,
   Sparkles,
   ShieldCheck,
   AlertTriangle,
+  Activity,
+  Layers,
+  ArrowRight,
 } from 'lucide-react';
-import { parseGenToWei } from './utils/formatters';
-
-type ViewMode = 'observatory' | 'grid' | 'table';
+import { formatGen, parseGenToWei, truncateAddress } from './utils/formatters';
 
 export function App() {
   const [contractAddress, setContractAddress] = useState<string>(getSavedContractAddress());
@@ -79,11 +79,11 @@ export function App() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // Selected policy for Observatory War Room
+  // Selected policy
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
 
-  // View mode switcher: 'observatory' (default high-tech command center), 'grid', 'table'
-  const [viewMode, setViewMode] = useState<ViewMode>('observatory');
+  // View Mode: 'radar' (Canopy 360 Sonar), 'daw' (Spectral Audio Workstation), 'ledger' (Forensic Audit Table)
+  const [viewMode, setViewMode] = useState<'radar' | 'daw' | 'ledger'>('radar');
 
   // Modals
   const [isCreateOpen, setIsCreateOpen] = useState<boolean>(false);
@@ -91,10 +91,6 @@ export function App() {
   const [isInspectOpen, setIsInspectOpen] = useState<boolean>(false);
   const [isAppealOpen, setIsAppealOpen] = useState<boolean>(false);
   const [modalPolicy, setModalPolicy] = useState<ConservationPolicyData | null>(null);
-
-  // Filter & Search
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Toast feedback
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -170,7 +166,7 @@ export function App() {
         }
       });
 
-      // Auto check if already authorized
+      // Auto check authorization
       (window as any).ethereum.request({ method: 'eth_accounts' }).then((accounts: string[]) => {
         if (accounts && accounts.length > 0) {
           setUserAddress(accounts[0]);
@@ -183,7 +179,7 @@ export function App() {
   }, [userAddress]);
 
   /* -------------------------------------------------------------------------- */
-  /*                            Fetch Contract Data                             */
+  /*                            Fetch Contract State                            */
   /* -------------------------------------------------------------------------- */
 
   const fetchData = useCallback(async () => {
@@ -232,8 +228,8 @@ export function App() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // Find active selected policy
-  const activeSelectedPolicy = useMemo(() => {
+  // Active selected policy
+  const activePolicy = useMemo(() => {
     if (!selectedPolicyId && policies.length > 0) {
       return policies[0];
     }
@@ -398,53 +394,18 @@ export function App() {
     }
   };
 
-  /* -------------------------------------------------------------------------- */
-  /*                            Filtering & Search                              */
-  /* -------------------------------------------------------------------------- */
-
-  const filteredPolicies = policies.filter((p) => {
-    if (statusFilter === 'active' && p.status !== STATUS_POLICY_OPEN && p.status !== STATUS_TELEMETRY_SUBMITTED) {
-      return false;
-    }
-    if (statusFilter === 'awaiting' && p.status !== STATUS_AWAITING_PAYOUT) {
-      return false;
-    }
-    if (
-      statusFilter === 'settled' &&
-      p.status !== STATUS_SETTLED_THRIVING &&
-      p.status !== STATUS_SETTLED_PARTIAL &&
-      p.status !== STATUS_SETTLED_TERMINATED
-    ) {
-      return false;
-    }
-    if (statusFilter === 'disputed' && p.status !== STATUS_DISPUTED) {
-      return false;
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      const matchId = String(p.policy_id).toLowerCase().includes(q);
-      const matchReserve = (p.forest_reserve_id || '').toLowerCase().includes(q);
-      const matchSponsor = (p.sponsor || '').toLowerCase().includes(q);
-      const matchRangers = (p.ranger_station || '').toLowerCase().includes(q);
-      const matchVerdict = (p.verdict || '').toLowerCase().includes(q);
-      return matchId || matchReserve || matchSponsor || matchRangers || matchVerdict;
-    }
-    return true;
-  });
-
   return (
-    <div className="min-h-screen bg-canopy-900 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-canopy-950 text-slate-100 flex flex-col font-sans pb-28">
       {/* Toast Feedback */}
       {toastMessage && (
-        <div className="fixed bottom-5 right-5 z-50 animate-in fade-in slide-in-from-bottom-5">
+        <div className="fixed top-24 right-5 z-50 animate-in fade-in slide-in-from-top-5">
           <div
-            className={`px-4 py-3 rounded-xl border shadow-2xl flex items-center gap-3 text-xs font-mono font-medium ${
+            className={`px-4 py-3 rounded-2xl border shadow-2xl flex items-center gap-3 text-xs font-mono font-medium backdrop-blur-md ${
               toastMessage.type === 'success'
-                ? 'bg-bio-thriving/20 border-bio-thriving text-bio-lime'
+                ? 'bg-bio-thriving/20 border-bio-thriving text-bio-lime shadow-bio-glow'
                 : toastMessage.type === 'error'
-                ? 'bg-bio-crisis/20 border-bio-crisis text-bio-crisis'
-                : 'bg-bio-cyan/20 border-bio-cyan text-bio-cyan'
+                ? 'bg-bio-crisis/20 border-bio-crisis text-bio-crisis shadow-crisis-glow'
+                : 'bg-bio-cyan/20 border-bio-cyan text-bio-cyan shadow-sonar-glow'
             }`}
           >
             <span>{toastMessage.text}</span>
@@ -452,7 +413,7 @@ export function App() {
         </div>
       )}
 
-      {/* Top Navbar */}
+      {/* Modern High-Tech Navbar */}
       <Navbar
         userAddress={userAddress}
         balance={balance}
@@ -465,9 +426,36 @@ export function App() {
         onOpenCreatePolicy={() => setIsCreateOpen(true)}
       />
 
-      {/* Main Content */}
+      {/* Cyberpunk Bio-Telemetry Live Strip */}
+      <div className="w-full bg-canopy-900/80 border-b border-canopy-750 px-4 sm:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 text-bio-thriving font-bold">
+            <span className="w-2 h-2 rounded-full bg-bio-thriving animate-pulse" />
+            <span>DEPIN CANOPY MESH: ONLINE</span>
+          </div>
+          <span className="hidden sm:inline text-canopy-700">|</span>
+          <span className="hidden sm:inline text-bio-muted">UPLINK: 48kHz 24-bit PCM</span>
+          <span className="hidden sm:inline text-canopy-700">|</span>
+          <span className="text-bio-cyan">CHAIN ID: 61999 (STUDIONET)</span>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="text-bio-muted">
+            GLOBAL TREASURY:{' '}
+            <strong className="text-white">
+              {stats ? formatGen(stats.total_conservation_locked, 2) : '0.00'} GEN
+            </strong>
+          </span>
+          <span className="text-canopy-700">|</span>
+          <span className="text-bio-lime">
+            RESERVES ACTIVE: <strong className="text-white">{policies.length}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* Main Observatory Stage */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Pull Payment Claim Widget */}
+        {/* Pull Payment Claim Alert Bar */}
         <PullPayoutButton
           contractAddress={contractAddress}
           userAddress={userAddress}
@@ -475,266 +463,110 @@ export function App() {
           onPayoutClaimed={fetchData}
         />
 
-        {/* Stats Overview */}
-        <StatsOverview
-          stats={stats}
-          policyCount={policies.length}
-          onOpenCreatePolicy={() => setIsCreateOpen(true)}
-        />
-
-        {/* Layout Mode Navigation & Refresh Bar */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-canopy-850 border border-canopy-700/80 shadow-lg">
-          <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-bio-cyan animate-pulse" />
-            <div>
-              <h2 className="font-heading font-extrabold text-lg text-white">
-                Bioacoustic Surveillance Observatory & Forensic War Room
-              </h2>
-              <p className="text-[11px] font-mono text-bio-muted">
-                Non-deterministic acoustic telemetry oracle for autonomous rainforest conservation grants
-              </p>
-            </div>
-          </div>
-
-          {/* View Mode Switcher Pills */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-canopy-950 border border-canopy-700 text-xs font-mono">
-              <button
-                onClick={() => setViewMode('observatory')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  viewMode === 'observatory'
-                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
-                    : 'text-bio-muted hover:text-white'
-                }`}
-              >
-                <LayoutDashboard className="w-3.5 h-3.5" />
-                <span>Observatory</span>
-              </button>
-              <button
-                onClick={() => setViewMode('table')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  viewMode === 'table'
-                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
-                    : 'text-bio-muted hover:text-white'
-                }`}
-              >
-                <TableIcon className="w-3.5 h-3.5" />
-                <span>Ledger</span>
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all ${
-                  viewMode === 'grid'
-                    ? 'bg-bio-thriving text-canopy-950 font-bold shadow-sm'
-                    : 'text-bio-muted hover:text-white'
-                }`}
-              >
-                <Grid className="w-3.5 h-3.5" />
-                <span>Card Grid</span>
-              </button>
-            </div>
-
-            <button
-              onClick={fetchData}
-              disabled={isLoading}
-              className="p-2 rounded-xl bg-canopy-800 hover:bg-canopy-750 border border-canopy-700 text-slate-300 hover:text-white transition-colors"
-              title="Refresh State"
-            >
-              <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-bio-thriving' : ''}`} />
-            </button>
-          </div>
-        </div>
-
-        {/* VIEW 1: OBSERVATORY MASTER-DETAIL (COMMAND STAGE + SOUNDSCAPE NAVIGATOR) */}
-        {viewMode === 'observatory' && (
-          <div className="flex flex-col lg:flex-row gap-6 items-start">
-            {/* Left Column: Soundscape Station Navigator */}
-            <SoundscapeNavigator
+        {/* VIEW 1: PANORAMIC 360° CANOPY RADAR & TRIBUNAL */}
+        {viewMode === 'radar' && (
+          <div className="space-y-6">
+            <CanopyRadarMatrix
               policies={policies}
-              selectedPolicyId={activeSelectedPolicy?.policy_id || null}
+              selectedPolicyId={activePolicy?.policy_id || null}
               onSelectPolicy={(p) => setSelectedPolicyId(p.policy_id)}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
               onOpenCreatePolicy={() => setIsCreateOpen(true)}
             />
 
-            {/* Right/Center Column: Bioacoustic Command Stage */}
-            {activeSelectedPolicy ? (
-              <BioacousticCommandStage
-                policy={activeSelectedPolicy}
-                userAddress={userAddress}
-                isConnected={isConnected}
-                onSubmitTelemetry={(p) => {
-                  setModalPolicy(p);
-                  setIsTelemetryOpen(true);
-                }}
-                onAdjudicate={handleAdjudicate}
-                onInspect={(p) => {
-                  setModalPolicy(p);
-                  setIsInspectOpen(true);
-                }}
-                onOpenAppeal={(p) => {
-                  setModalPolicy(p);
-                  setIsAppealOpen(true);
-                }}
-                onAdjudicateAppeal={handleAdjudicateAppeal}
-                onFinalize={handleFinalize}
-                onReclaim={handleReclaim}
-                actionLoadingId={actionLoadingId}
-              />
-            ) : (
-              <div className="flex-1 p-12 text-center rounded-2xl bg-canopy-850 border border-canopy-700 space-y-4">
-                <Trees className="w-12 h-12 mx-auto text-bio-muted" />
-                <h3 className="font-heading font-bold text-lg text-white">No Reserve Selected</h3>
-                <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
-                  Deploy your first habitat escrow to initiate continuous acoustic canopy monitoring.
-                </p>
-                <button
-                  onClick={() => setIsCreateOpen(true)}
-                  className="px-5 py-2.5 rounded-xl bg-bio-thriving text-canopy-950 font-heading font-bold text-xs uppercase"
-                >
-                  Deploy First Escrow
-                </button>
+            {activePolicy ? (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <SpectralWorkstation
+                  policy={activePolicy}
+                  onInspect={(p) => {
+                    setModalPolicy(p);
+                    setIsInspectOpen(true);
+                  }}
+                />
+
+                <EscrowTribunalTerminal
+                  policy={activePolicy}
+                  userAddress={userAddress}
+                  isConnected={isConnected}
+                  onSubmitTelemetry={(p) => {
+                    setModalPolicy(p);
+                    setIsTelemetryOpen(true);
+                  }}
+                  onAdjudicate={handleAdjudicate}
+                  onOpenAppeal={(p) => {
+                    setModalPolicy(p);
+                    setIsAppealOpen(true);
+                  }}
+                  onAdjudicateAppeal={handleAdjudicateAppeal}
+                  onFinalize={handleFinalize}
+                  onReclaim={handleReclaim}
+                  actionLoadingId={actionLoadingId}
+                />
               </div>
-            )}
+            ) : null}
           </div>
         )}
 
-        {/* VIEW 2: HIGH-DENSITY AUDIT TABLE */}
-        {viewMode === 'table' && (
-          <PoliciesTable
-            policies={filteredPolicies}
-            onSelectPolicy={(p) => {
-              setSelectedPolicyId(p.policy_id);
-              setViewMode('observatory');
-            }}
-            onInspect={(p) => {
-              setModalPolicy(p);
-              setIsInspectOpen(true);
-            }}
-            selectedPolicyId={activeSelectedPolicy?.policy_id || null}
-          />
+        {/* VIEW 2: FULL-SCREEN SPECTRAL DAW WORKSTATION */}
+        {viewMode === 'daw' && activePolicy && (
+          <div className="space-y-6">
+            <SpectralWorkstation
+              policy={activePolicy}
+              onInspect={(p) => {
+                setModalPolicy(p);
+                setIsInspectOpen(true);
+              }}
+            />
+
+            <EscrowTribunalTerminal
+              policy={activePolicy}
+              userAddress={userAddress}
+              isConnected={isConnected}
+              onSubmitTelemetry={(p) => {
+                setModalPolicy(p);
+                setIsTelemetryOpen(true);
+              }}
+              onAdjudicate={handleAdjudicate}
+              onOpenAppeal={(p) => {
+                setModalPolicy(p);
+                setIsAppealOpen(true);
+              }}
+              onAdjudicateAppeal={handleAdjudicateAppeal}
+              onFinalize={handleFinalize}
+              onReclaim={handleReclaim}
+              actionLoadingId={actionLoadingId}
+            />
+          </div>
         )}
 
-        {/* VIEW 3: CLASSIC CARD GRID */}
-        {viewMode === 'grid' && (
-          <div className="space-y-4">
-            {/* Search and Filters */}
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <Search className="w-4 h-4 absolute left-3 top-3 text-bio-muted" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by Reserve name, Policy ID, Sponsor, or Rangers..."
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-bio-thriving"
-                />
-              </div>
-
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-canopy-850 border border-canopy-700 text-xs font-mono overflow-x-auto w-full sm:w-auto">
-                {[
-                  { id: 'all', label: 'All' },
-                  { id: 'active', label: 'Listening' },
-                  { id: 'awaiting', label: 'Cooling' },
-                  { id: 'disputed', label: 'Appeals' },
-                  { id: 'settled', label: 'Settled' },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setStatusFilter(tab.id)}
-                    className={`px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap ${
-                      statusFilter === tab.id
-                        ? 'bg-bio-thriving text-canopy-950 font-bold'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {filteredPolicies.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredPolicies.map((policy) => (
-                  <PolicyCard
-                    key={policy.policy_id}
-                    policy={policy}
-                    userAddress={userAddress}
-                    isConnected={isConnected}
-                    onSubmitTelemetry={(p) => {
-                      setModalPolicy(p);
-                      setIsTelemetryOpen(true);
-                    }}
-                    onAdjudicate={handleAdjudicate}
-                    onInspect={(p) => {
-                      setModalPolicy(p);
-                      setIsInspectOpen(true);
-                    }}
-                    onOpenAppeal={(p) => {
-                      setModalPolicy(p);
-                      setIsAppealOpen(true);
-                    }}
-                    onAdjudicateAppeal={handleAdjudicateAppeal}
-                    onFinalize={handleFinalize}
-                    onReclaim={handleReclaim}
-                    actionLoadingId={actionLoadingId}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="p-12 text-center rounded-2xl bg-canopy-850 border border-canopy-700 space-y-4">
-                <Trees className="w-12 h-12 mx-auto text-bio-muted" />
-                <h3 className="font-heading font-bold text-lg text-white">No Policies Found</h3>
-                <p className="text-xs font-mono text-slate-400 max-w-md mx-auto">
-                  No policies match active filters.
-                </p>
-              </div>
-            )}
+        {/* VIEW 3: HIGH-DENSITY FORENSIC AUDIT LEDGER */}
+        {viewMode === 'ledger' && (
+          <div className="space-y-6">
+            <PoliciesTable
+              policies={policies}
+              onSelectPolicy={(p) => {
+                setSelectedPolicyId(p.policy_id);
+                setViewMode('daw');
+              }}
+              onInspect={(p) => {
+                setModalPolicy(p);
+                setIsInspectOpen(true);
+              }}
+              selectedPolicyId={activePolicy?.policy_id || null}
+            />
           </div>
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-canopy-700/80 bg-canopy-950 py-6 text-xs text-bio-muted font-mono">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-bio-thriving animate-pulse" />
-            <span>AgentBioAcoustic • Powered by GenLayer StudioNet (Chain ID: 61999)</span>
-          </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <a
-              href="https://studio.genlayer.com"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-bio-thriving transition-colors"
-            >
-              Studio Explorer
-            </a>
-            <span>•</span>
-            <a
-              href="https://arbimon.rfcx.org"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-bio-cyan transition-colors"
-            >
-              Rainforest Connection Arbimon
-            </a>
-            <span>•</span>
-            <a
-              href="https://gbif.org"
-              target="_blank"
-              rel="noreferrer"
-              className="hover:text-bio-lime transition-colors"
-            >
-              GBIF Bioacoustics
-            </a>
-          </div>
-        </div>
-      </footer>
+      {/* Floating Cyberpunk Bioacoustic Dock */}
+      <FloatingControlDock
+        viewMode={viewMode}
+        onViewChange={setViewMode}
+        onOpenCreatePolicy={() => setIsCreateOpen(true)}
+        onRefresh={fetchData}
+        isLoading={isLoading}
+        activeReserveCount={policies.length}
+        totalGenLocked={stats ? formatGen(stats.total_conservation_locked, 1) : '0'}
+      />
 
       {/* Modals */}
       <CreatePolicyModal
