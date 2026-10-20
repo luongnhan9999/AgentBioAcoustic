@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #050D0A;
+    color: #F1F5F9;
+  }
+}
+
+/* Custom soundwave animation bars */
+.sound-bar {
+  display: inline-block;
+  width: 4px;
+  background: #10B981;
+  border-radius: 2px;
+  margin: 0 1.5px;
+  animation: soundwave 1.6s ease-in-out infinite;
+}
+
+.sound-bar:nth-child(2) { animation-delay: 0.2s; height: 18px; }
+.sound-bar:nth-child(3) { animation-delay: 0.4s; height: 26px; }
+.sound-bar:nth-child(4) { animation-delay: 0.1s; height: 32px; }
+.sound-bar:nth-child(5) { animation-delay: 0.5s; height: 22px; }
+.sound-bar:nth-child(6) { animation-delay: 0.3s; height: 14px; }
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #050D0A;
+}
+::-webkit-scrollbar-thumb {
+  background: #1C3B2F;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #264E3E;
+}
