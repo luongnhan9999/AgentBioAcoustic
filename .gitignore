@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+artifacts/
+
+# Node
+node_modules/
+dist/
+.vercel
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
