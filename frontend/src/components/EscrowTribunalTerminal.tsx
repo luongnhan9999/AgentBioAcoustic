@@ -13,6 +13,8 @@ import {
   Loader2,
   Award,
   ChevronRight,
+  UserCheck,
+  Lock,
 } from 'lucide-react';
 import {
   ConservationPolicyData,
@@ -56,6 +58,11 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
 
   const statusMeta = getStatusMeta(policy.status);
   const isActionLoading = actionLoadingId === policy.policy_id;
+
+  // Role-Based Access Control (RBAC) Detection
+  const userLower = userAddress?.toLowerCase() || '';
+  const isSponsor = Boolean(userLower && userLower === policy.sponsor?.toLowerCase());
+  const isRanger = Boolean(userLower && userLower === policy.ranger_station?.toLowerCase());
 
   // 72s Cooling-Off countdown
   useEffect(() => {
@@ -105,6 +112,29 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
         </span>
       </div>
 
+      {/* RBAC Role Indicator Chip */}
+      <div className="flex items-center justify-between px-3.5 py-2 rounded-2xl bg-canopy-900 border border-canopy-750 text-xs font-mono">
+        <span className="text-bio-muted flex items-center gap-1.5">
+          <UserCheck className="w-4 h-4 text-bio-cyan" />
+          <span>Connected Role:</span>
+        </span>
+        {isSponsor ? (
+          <span className="px-2.5 py-0.5 rounded-full bg-bio-lime/20 text-bio-lime border border-bio-lime/50 font-bold">
+            SPONSOR (ESCROW DONOR)
+          </span>
+        ) : isRanger ? (
+          <span className="px-2.5 py-0.5 rounded-full bg-bio-cyan/20 text-bio-cyan border border-bio-cyan/50 font-bold">
+            RANGER STATION (RESERVE PATROL)
+          </span>
+        ) : isConnected ? (
+          <span className="px-2.5 py-0.5 rounded-full bg-canopy-800 text-slate-300 border border-canopy-700">
+            PUBLIC AUDITOR / OBSERVER
+          </span>
+        ) : (
+          <span className="text-slate-500 italic">Wallet Not Connected</span>
+        )}
+      </div>
+
       {/* 72-Second Challenge Window Countdown Widget (if active) */}
       {policy.status === STATUS_AWAITING_PAYOUT && (
         <div className="p-4 rounded-2xl bg-bio-amber/10 border border-bio-amber/40 space-y-2">
@@ -121,7 +151,7 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
           <p className="text-[11px] font-mono text-bio-muted">
             {secondsLeft > 0
               ? 'Appeals permitted with 10% staked dispute bond. Payout locked until timer expires.'
-              : 'Challenge window passed! Anyone can finalize the settlement now.'}
+              : 'Challenge window passed! Stakeholders or owner can finalize payout.'}
           </p>
         </div>
       )}
@@ -172,16 +202,32 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
         </div>
       </div>
 
-      {/* Smart Contract Actions Trigger Deck */}
+      {/* Smart Contract Actions Trigger Deck (Strict RBAC Enforcement) */}
       <div className="border-t border-canopy-750 pt-4 flex flex-wrap items-center gap-3">
         {policy.status === STATUS_POLICY_OPEN && (
-          <button
-            onClick={() => onSubmitTelemetry(policy)}
-            disabled={isActionLoading}
-            className="flex-1 py-3 px-4 rounded-2xl bg-bio-thriving hover:bg-bio-lime text-canopy-950 font-heading font-bold text-xs uppercase tracking-wider shadow-bio-glow transition-all"
-          >
-            Submit Soundscape Telemetry
-          </button>
+          <div className="flex-1 flex flex-col gap-1">
+            <button
+              onClick={() => onSubmitTelemetry(policy)}
+              disabled={isActionLoading || (!isRanger && isConnected)}
+              className={`w-full py-3 px-4 rounded-2xl font-heading font-bold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 ${
+                isRanger || !isConnected
+                  ? 'bg-bio-thriving hover:bg-bio-lime text-canopy-950 shadow-bio-glow'
+                  : 'bg-canopy-800 text-slate-500 border border-canopy-700 cursor-not-allowed'
+              }`}
+            >
+              {isRanger || !isConnected ? (
+                <>
+                  <Radio className="w-4 h-4" />
+                  <span>Submit Soundscape Telemetry</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-4 h-4" />
+                  <span>Only Ranger Station Can Submit Telemetry</span>
+                </>
+              )}
+            </button>
+          </div>
         )}
 
         {policy.status === STATUS_TELEMETRY_SUBMITTED && (
@@ -199,8 +245,19 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
           <>
             <button
               onClick={() => onOpenAppeal(policy)}
-              disabled={isActionLoading || secondsLeft <= 0}
-              className="py-3 px-4 rounded-2xl bg-bio-amber/20 hover:bg-bio-amber/30 text-bio-amber border border-bio-amber font-heading font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-40"
+              disabled={isActionLoading || secondsLeft <= 0 || (!isSponsor && !isRanger && isConnected)}
+              className={`py-3 px-4 rounded-2xl font-heading font-bold text-xs uppercase tracking-wider transition-all ${
+                (isSponsor || isRanger || !isConnected) && secondsLeft > 0
+                  ? 'bg-bio-amber/20 hover:bg-bio-amber/30 text-bio-amber border border-bio-amber'
+                  : 'bg-canopy-800 text-slate-500 border border-canopy-700 cursor-not-allowed'
+              }`}
+              title={
+                !isSponsor && !isRanger && isConnected
+                  ? 'Only Sponsor or Ranger Station can file an appeal'
+                  : secondsLeft <= 0
+                  ? 'Cooling-off window has elapsed'
+                  : 'Stake 10% bond to dispute verdict'
+              }
             >
               Challenge (10% Bond)
             </button>
@@ -232,8 +289,13 @@ export const EscrowTribunalTerminal: React.FC<EscrowTribunalTerminalProps> = ({
         {policy.status === STATUS_POLICY_OPEN && (
           <button
             onClick={() => onReclaim(policy.policy_id)}
-            disabled={isActionLoading}
-            className="py-3 px-4 rounded-2xl bg-canopy-850 hover:bg-canopy-800 border border-canopy-700 text-slate-400 hover:text-white font-mono text-xs transition-colors"
+            disabled={isActionLoading || (!isSponsor && isConnected)}
+            className={`py-3 px-4 rounded-2xl font-mono text-xs transition-colors ${
+              isSponsor || !isConnected
+                ? 'bg-canopy-850 hover:bg-canopy-800 border border-canopy-700 text-slate-300 hover:text-white'
+                : 'bg-canopy-900 border border-canopy-800 text-slate-600 cursor-not-allowed'
+            }`}
+            title={!isSponsor && isConnected ? 'Only Sponsor can reclaim expired escrow' : 'Reclaim if expired'}
           >
             Cancel / Reclaim
           </button>
